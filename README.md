@@ -1,61 +1,63 @@
 # LoraTap Curtain Relay — ESPHome (CB2S / BK7231N)
 
-Firmware de ESPHome para relés de persianas basados en el módulo **CB2S (Beken BK7231N)**, como los encontrados en dispositivos **LoraTap SC411WSC** o similares.
+[🇪🇸 Lee la versión en castellano](README.es.md)
 
-> Este proyecto está pensado para ser **universal y modular**: el mismo firmware base sirve para distintas ubicaciones; solo tienes que elegir el archivo de botones físicos que corresponda a tu interruptor de pared.
+ESPHome firmware for curtain relay modules based on **CB2S (Beken BK7231N)**, such as those found in **LoraTap SC411WSC** or similar devices.
 
-## Características
+> This project is designed to be **universal and modular**: the same base firmware works for different installations; you only need to pick the physical button configuration file that matches your wall switch.
 
-- Cover `time_based` con **posición estimada** (0–100 %) y memoria del último estado.
-- **Tiempos de subida/bajada ajustables** desde Home Assistant / web.
-- **Inversión de sentido** configurable desde HA.
-- **Timeout de seguridad** de 60 s para apagar los relés si algo falla.
-- **Web server** integrado para control local sin depender de HA.
-- Soporte para varios tipos de interruptor de pared vía archivos incluidos:
-  - 1 pulsador (ciclo)
-  - 2 pulsadores (subir/bajar)
-  - 3 pulsadores (subir/bajar/parar)
-  - Interruptor latching de 3 posiciones
-  - Sin botones físicos
+## Features
 
-## Hardware confirmado
+- `time_based` cover with **estimated position** (0–100 %) and memory of the last state.
+- **Adjustable up/down travel times** from Home Assistant / web UI.
+- **Direction inversion** configurable from HA.
+- **60 s safety timeout** to turn off relays if something goes wrong.
+- **Built-in web server** for local control without relying on HA.
+- Support for several wall switch types via included files:
+  - 1 button (cycle)
+  - 2 buttons (up/down)
+  - 3 buttons (up/down/stop)
+  - 3-position latching switch
+  - No physical buttons
 
-| Módulo | CB2S (BK7231N) |
+## Confirmed hardware
+
+| Module | CB2S (BK7231N) |
 |--------|----------------|
-| MAC de ejemplo | `38:a5:c9:f0:44:e3` |
-| Relé de subida | **P24** |
-| Relé de bajada | **P26** |
-| Botón subir (candidato) | P23 |
-| Botón bajar (candidato) | P21 |
-| Botón parar (candidato) | P7 |
+| Example MAC | `38:a5:c9:f0:44:e3` |
+| Up relay | **P24** |
+| Down relay | **P26** |
+| Up button (candidate) | P23 |
+| Down button (candidate) | P21 |
+| Stop button (candidate) | P7 |
 
-> Los pines de botones pueden variar según el modelo exacto. Usa el modo que corresponda y ajusta las `substitutions` si es necesario.
+> Button pins may vary depending on the exact model. Pick the right mode and adjust the `substitutions` if needed.
 
-## Estructura de archivos
+## File structure
 
 ```text
 .
-├── curtain_relay_f044e3.yaml   # Firmware base
-├── buttons_1way.yaml           # 1 pulsador (ciclo)
-├── buttons_2way.yaml           # 2 pulsadores
-├── buttons_3way.yaml           # 3 pulsadores
-├── buttons_latching.yaml       # Interruptor latching 3 posiciones
-├── buttons_disabled.yaml       # Sin botones físicos
-├── secrets.yaml.example        # Plantilla de secretos
+├── curtain_relay_f044e3.yaml   # Base firmware
+├── buttons_1way.yaml           # 1-button cycle
+├── buttons_2way.yaml           # 2 buttons
+├── buttons_3way.yaml           # 3 buttons
+├── buttons_latching.yaml       # 3-position latching switch
+├── buttons_disabled.yaml       # No physical buttons
+├── secrets.yaml.example        # Secrets template
 └── README.md
 ```
 
-## Cómo empezar
+## Getting started
 
-1. Copia `secrets.yaml.example` a `secrets.yaml` y rellena tus credenciales WiFi.
-2. Abre `curtain_relay_f044e3.yaml` y elige el tipo de botones editando la última línea:
+1. Copy `secrets.yaml.example` to `secrets.yaml` and fill in your WiFi credentials.
+2. Open `curtain_relay_f044e3.yaml` and choose the button type by editing the last line:
 
 ```yaml
 packages:
   buttons: !include buttons_2way.yaml
 ```
 
-3. Compila y flashea por UART:
+3. Compile and flash via UART:
 
 ```bash
 esphome compile curtain_relay_f044e3.yaml
@@ -63,25 +65,25 @@ ltchiptool flash write -d /dev/ttyUSB0 \
   /tmp/.esphome/build/curtain-relay-f044e3/.pioenvs/curtain-relay-f044e3/firmware.uf2
 ```
 
-4. El módulo CB2S entra en modo bootloader automáticamente; no es necesario CEN a GND.
-5. Verifica que responde:
+4. The CB2S module enters bootloader mode automatically; no need to bridge CEN to GND.
+5. Verify it responds:
 
 ```bash
 ping curtain-relay-f044e3.local
 ```
 
-## Conexión UART
+## UART wiring
 
-| CB2S | Adaptador USB-TTL |
-|------|-------------------|
+| CB2S | USB-TTL adapter |
+|------|-----------------|
 | 3V3  | 3V3 |
 | GND  | GND |
 | TX   | RX |
 | RX   | TX |
 
-## Personalización
+## Customization
 
-Edita las `substitutions` del YAML base para cambiar pines o tiempos:
+Edit the `substitutions` in the base YAML to change pins or timeouts:
 
 ```yaml
 substitutions:
@@ -93,16 +95,16 @@ substitutions:
   safety_timeout: "60s"
 ```
 
-## Calibración
+## Calibration
 
-Ajusta los números **Tiempo subida (s)** y **Tiempo bajada (s)** para que coincidan con el tiempo real de tu persiana. Con esos valores el porcentaje de posición será preciso.
+Adjust the **Up time (s)** and **Down time (s)** numbers to match your curtain's real travel time. With correct values the position percentage will be accurate.
 
-## Referencias
+## References
 
 - [ESPHome LibreTiny / bk72xx](https://esphome.io/components/libretiny.html)
-- [LoraTap SC411WSC en devices.esphome.io](https://devices.esphome.io/devices/LoraTap-SC411WSC)
-- [LoraTap SC500W en devices.esphome.io](https://devices.esphome.io/devices/LoraTap-SC500W)
+- [LoraTap SC411WSC on devices.esphome.io](https://devices.esphome.io/devices/LoraTap-SC411WSC)
+- [LoraTap SC500W on devices.esphome.io](https://devices.esphome.io/devices/LoraTap-SC500W)
 
-## Licencia
+## License
 
-MIT — úsalo, modifícalo y compártelo.
+AGPL-3.0 — free to use, modify and share under the same terms.

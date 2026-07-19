@@ -18,6 +18,11 @@
 6. **Mando RF**: se perdió al flashear. Recuperarlo requiere análisis del firmware stock o reprogramación del receptor.
 7. **Backup stock** guardado en `/tmp/relay_backup.bin` (2 MiB). Particiones extraídas en `/tmp/relay_split/` y `/tmp/relay_extracted/`.
 
+## Repo remoto
+
+- **GitHub**: https://github.com/gnacho/esphome-loratap-curtain-cb2s
+- Rama `main` sincronizada con el repo local.
+
 ## Estructura del repo
 
 ```text
