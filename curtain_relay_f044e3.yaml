@@ -1,0 +1,202 @@
+# Relé de persianas LoraTap CB2S (BK7231N) — Firmware base
+# Elige la configuración de botones físicos cambiando button_config.
+
+esphome:
+  name: curtain-relay-f044e3
+  friendly_name: "Persiana relé f044e3"
+
+bk72xx:
+  board: cb2s
+
+logger:
+  level: INFO
+
+api:
+
+ota:
+  - platform: esphome
+
+web_server:
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+substitutions:
+  up_pin: "P24"
+  down_pin: "P26"
+  btn_up_pin: "P23"
+  btn_down_pin: "P21"
+  btn_stop_pin: "P7"
+  safety_timeout: "60s"
+  # Elige uno de:
+  # buttons_disabled.yaml, buttons_1way.yaml, buttons_2way.yaml,
+  # buttons_3way.yaml, buttons_latching.yaml
+  button_config: "buttons_2way.yaml"
+
+globals:
+  - id: g_current_pos
+    type: float
+    restore_value: yes
+    initial_value: "0.0"
+  - id: g_target_pos
+    type: float
+    restore_value: no
+    initial_value: "0.0"
+  - id: g_move_time_ms
+    type: int
+    restore_value: no
+    initial_value: "0"
+
+number:
+  - platform: template
+    name: "Tiempo subida (s)"
+    id: num_up_time
+    optimistic: true
+    min_value: 1
+    max_value: 120
+    step: 1
+    initial_value: 30
+    restore_value: true
+    unit_of_measurement: "s"
+    mode: box
+
+  - platform: template
+    name: "Tiempo bajada (s)"
+    id: num_down_time
+    optimistic: true
+    min_value: 1
+    max_value: 120
+    step: 1
+    initial_value: 30
+    restore_value: true
+    unit_of_measurement: "s"
+    mode: box
+
+switch:
+  - platform: gpio
+    name: "Relé subida"
+    id: sw_up
+    pin: ${up_pin}
+    interlock: [sw_down]
+    interlock_wait_time: 500ms
+    restore_mode: always off
+    internal: true
+    on_turn_on:
+      - script.execute: safety_timeout
+    on_turn_off:
+      - script.stop: safety_timeout
+
+  - platform: gpio
+    name: "Relé bajada"
+    id: sw_down
+    pin: ${down_pin}
+    interlock: [sw_up]
+    interlock_wait_time: 500ms
+    restore_mode: always off
+    internal: true
+    on_turn_on:
+      - script.execute: safety_timeout
+    on_turn_off:
+      - script.stop: safety_timeout
+
+  - platform: template
+    name: "Invertir sentido"
+    id: sw_invert
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+    turn_on_action:
+      - lambda: 'id(sw_invert).publish_state(true);'
+    turn_off_action:
+      - lambda: 'id(sw_invert).publish_state(false);'
+
+button:
+  - platform: restart
+    name: "Reiniciar"
+  - platform: template
+    name: "Posición 50 %"
+    on_press:
+      - lambda: 'id(move_to_position).execute(0.5f);'
+
+script:
+  - id: move_to_position
+    mode: restart
+    parameters:
+      target: float
+    then:
+      - lambda: |-
+          float current = id(g_current_pos);
+          float target_pos = target;
+          bool invert = id(sw_invert).state;
+          float up_time = id(num_up_time).state;
+          float down_time = id(num_down_time).state;
+
+          if (fabs(target_pos - current) < 0.02f) {
+            return;
+          }
+
+          id(g_target_pos) = target_pos;
+
+          if (target_pos > current) {
+            id(g_move_time_ms) = (target_pos - current) * up_time * 1000;
+            if (invert) {
+              id(sw_down).turn_on();
+            } else {
+              id(sw_up).turn_on();
+            }
+          } else {
+            id(g_move_time_ms) = (current - target_pos) * down_time * 1000;
+            if (invert) {
+              id(sw_up).turn_on();
+            } else {
+              id(sw_down).turn_on();
+            }
+          }
+      - delay: !lambda "return id(g_move_time_ms);"
+      - lambda: |-
+          id(sw_down).turn_off();
+          id(sw_up).turn_off();
+          id(g_current_pos) = id(g_target_pos);
+          id(cover_main).publish_state(id(g_current_pos));
+
+  - id: safety_timeout
+    mode: restart
+    then:
+      - delay: ${safety_timeout}
+      - logger.log: "SAFETY TIMEOUT: apagando relés"
+      - lambda: |-
+          id(sw_down).turn_off();
+          id(sw_up).turn_off();
+
+cover:
+  - platform: template
+    name: "Persiana"
+    id: cover_main
+    device_class: shutter
+    optimistic: true
+    assumed_state: true
+    has_position: true
+    lambda: "return id(g_current_pos);"
+
+    open_action:
+      - script.execute:
+          id: move_to_position
+          target: 1.0
+
+    close_action:
+      - script.execute:
+          id: move_to_position
+          target: 0.0
+
+    stop_action:
+      - script.stop: move_to_position
+      - lambda: |-
+          id(sw_down).turn_off();
+          id(sw_up).turn_off();
+          id(cover_main).publish_state(id(g_current_pos));
+
+    position_action:
+      - lambda: 'id(move_to_position).execute(pos);'
+
+packages:
+  buttons: !include buttons_2way.yaml

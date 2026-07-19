@@ -1,0 +1,37 @@
+# Interruptor latching de 3 posiciones (arriba/abajo/centro)
+# Se cierra un contacto al estar arriba y otro al estar abajo.
+# En posición central ambos contactos están abiertos.
+binary_sensor:
+  - platform: gpio
+    name: "Contacto arriba"
+    id: btn_up
+    pin:
+      number: ${btn_up_pin}
+      mode: INPUT_PULLUP
+    filters:
+      - invert:
+    on_state:
+      then:
+        - lambda: |-
+            if (id(btn_up).state) {
+              id(cover_main).make_call().set_command_open().perform();
+            } else if (!id(btn_down).state) {
+              id(cover_main).make_call().set_command_stop().perform();
+            }
+
+  - platform: gpio
+    name: "Contacto abajo"
+    id: btn_down
+    pin:
+      number: ${btn_down_pin}
+      mode: INPUT_PULLUP
+    filters:
+      - invert:
+    on_state:
+      then:
+        - lambda: |-
+            if (id(btn_down).state) {
+              id(cover_main).make_call().set_command_close().perform();
+            } else if (!id(btn_up).state) {
+              id(cover_main).make_call().set_command_stop().perform();
+            }

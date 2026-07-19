@@ -1,0 +1,35 @@
+# 2 pulsadores: subir / bajar. Si la persiana se está moviendo, el mismo botón la para.
+binary_sensor:
+  - platform: gpio
+    name: "Botón subir"
+    id: btn_up
+    pin:
+      number: ${btn_up_pin}
+      mode: INPUT_PULLUP
+    filters:
+      - invert:
+    on_press:
+      then:
+        - lambda: |-
+            if (id(cover_main).current_operation == cover::COVER_OPERATION_IDLE) {
+              id(cover_main).make_call().set_command_open().perform();
+            } else {
+              id(cover_main).make_call().set_command_stop().perform();
+            }
+
+  - platform: gpio
+    name: "Botón bajar"
+    id: btn_down
+    pin:
+      number: ${btn_down_pin}
+      mode: INPUT_PULLUP
+    filters:
+      - invert:
+    on_press:
+      then:
+        - lambda: |-
+            if (id(cover_main).current_operation == cover::COVER_OPERATION_IDLE) {
+              id(cover_main).make_call().set_command_close().perform();
+            } else {
+              id(cover_main).make_call().set_command_stop().perform();
+            }

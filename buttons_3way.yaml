@@ -1,0 +1,37 @@
+# 3 pulsadores: subir / bajar / parar
+binary_sensor:
+  - platform: gpio
+    name: "Botón subir"
+    id: btn_up
+    pin:
+      number: ${btn_up_pin}
+      mode: INPUT_PULLUP
+    filters:
+      - invert:
+    on_press:
+      then:
+        - cover.open: cover_main
+
+  - platform: gpio
+    name: "Botón bajar"
+    id: btn_down
+    pin:
+      number: ${btn_down_pin}
+      mode: INPUT_PULLUP
+    filters:
+      - invert:
+    on_press:
+      then:
+        - cover.close: cover_main
+
+  - platform: gpio
+    name: "Botón parar"
+    id: btn_stop
+    pin:
+      number: ${btn_stop_pin}
+      mode: INPUT_PULLUP
+    filters:
+      - invert:
+    on_press:
+      then:
+        - cover.stop: cover_main

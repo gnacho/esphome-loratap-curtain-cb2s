@@ -1,0 +1,23 @@
+# 1 pulsador: ciclo subir → parar → bajar → parar
+binary_sensor:
+  - platform: gpio
+    name: "Botón persiana"
+    id: btn_single
+    pin:
+      number: ${btn_up_pin}
+      mode: INPUT_PULLUP
+    filters:
+      - invert:
+    on_press:
+      then:
+        - lambda: |-
+            auto op = id(cover_main).current_operation;
+            if (op == cover::COVER_OPERATION_IDLE) {
+              if (id(g_current_pos) < 0.5f) {
+                id(cover_main).make_call().set_command_open().perform();
+              } else {
+                id(cover_main).make_call().set_command_close().perform();
+              }
+            } else {
+              id(cover_main).make_call().set_command_stop().perform();
+            }
