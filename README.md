@@ -2,17 +2,19 @@
 
 [🇪🇸 Lee la versión en castellano](README.es.md)
 
-ESPHome firmware for curtain relay modules based on **CB2S (Beken BK7231N)**, such as those found in **LoraTap SC411WSC** or similar devices.
+ESPHome firmware for curtain relay modules based on **CB2S (Beken BK7231N)**, such as those found in **LoraTap SC411WSC**, **LoraTap SC500W-CB2S** or similar devices.
 
 > This project is designed to be **universal and modular**: the same base firmware works for different installations; you only need to pick the physical button configuration file that matches your wall switch.
 
 ## Features
 
-- `time_based` cover with **estimated position** (0–100 %) and memory of the last state.
+- **Stable script-based control** (no `cover` interlock issues).
+- **Estimated position** (0–100 %) and memory of the last state.
 - **Adjustable up/down travel times** from Home Assistant / web UI.
 - **Direction inversion** configurable from HA.
 - **60 s safety timeout** to turn off relays if something goes wrong.
 - **Built-in web server** for local control without relying on HA.
+- **Captive portal** for easy recovery if WiFi fails.
 - Support for several wall switch types via included files:
   - 1 button (cycle)
   - 2 buttons (up/down)
@@ -27,45 +29,47 @@ ESPHome firmware for curtain relay modules based on **CB2S (Beken BK7231N)**, su
 | Example MAC | `38:a5:c9:f0:44:e3` |
 | Up relay | **P24** |
 | Down relay | **P26** |
-| Up button (candidate) | P23 |
-| Down button (candidate) | P21 |
-| Stop button (candidate) | P7 |
+| Up button | P23 |
+| Down button | P21 |
+| Stop button | P7 (candidate) |
+| Onboard LED | P10 |
 
 > Button pins may vary depending on the exact model. Pick the right mode and adjust the `substitutions` if needed.
+
+## Important notes about RF remote
+
+The original RF remote works at **868 MHz** and is handled by an **independent receiver module** inside the relay. It does **not** go through the CB2S, so it **cannot be read by ESPHome `remote_receiver`**. If the remote stops working after flashing, the receiver is either damaged or unpaired, not a software issue.
 
 ## File structure
 
 ```text
 .
-├── curtain_relay_f044e3.yaml   # Base firmware
-├── buttons_1way.yaml           # 1-button cycle
-├── buttons_2way.yaml           # 2 buttons
-├── buttons_3way.yaml           # 3 buttons
-├── buttons_latching.yaml       # 3-position latching switch
-├── buttons_disabled.yaml       # No physical buttons
-├── secrets.yaml.example        # Secrets template
-└── README.md
+├── curtain_relay_f044e3_full.yaml    # Recommended stable firmware
+├── curtain_relay_f044e3.yaml         # Original base firmware (cover-based)
+├── buttons_1way.yaml                 # 1-button cycle
+├── buttons_2way.yaml                 # 2 buttons
+├── buttons_3way.yaml                 # 3 buttons
+├── buttons_latching.yaml             # 3-position latching switch
+├── buttons_disabled.yaml             # No physical buttons
+├── secrets.yaml.example              # Secrets template
+├── PROJECT_MEMORY.md                 # Project lessons and notes
+├── README.md                         # This file
+└── README.es.md                      # Spanish version
 ```
 
 ## Getting started
 
 1. Copy `secrets.yaml.example` to `secrets.yaml` and fill in your WiFi credentials.
-2. Open `curtain_relay_f044e3.yaml` and choose the button type by editing the last line:
-
-```yaml
-packages:
-  buttons: !include buttons_2way.yaml
-```
-
+2. **Recommended:** use `curtain_relay_f044e3_full.yaml` as your firmware.
 3. Compile and flash via UART:
 
 ```bash
-esphome compile curtain_relay_f044e3.yaml
+esphome compile curtain_relay_f044e3_full.yaml
 ltchiptool flash write -d /dev/ttyUSB0 \
-  /tmp/.esphome/build/curtain-relay-f044e3/.pioenvs/curtain-relay-f044e3/firmware.uf2
+  .esphome/build/curtain-relay-f044e3/.pioenvs/curtain-relay-f044e3/firmware.uf2
 ```
 
-4. The CB2S module enters bootloader mode automatically; no need to bridge CEN to GND.
+4. The CB2S module enters bootloader mode automatically; no need to bridge CEN to GND on the original PCB.
 5. Verify it responds:
 
 ```bash
@@ -76,14 +80,16 @@ ping curtain-relay-f044e3.local
 
 | CB2S | USB-TTL adapter |
 |------|-----------------|
-| 3V3  | 3V3 |
+| 3V3  | 3V3 (only if the relay has no own power) |
 | GND  | GND |
 | TX   | RX |
 | RX   | TX |
 
+> **Warning:** never short P26 to GND. It will kill the CB2S and possibly your USB-TTL adapter.
+
 ## Customization
 
-Edit the `substitutions` in the base YAML to change pins or timeouts:
+Edit the `substitutions` in the YAML to change pins or timeouts:
 
 ```yaml
 substitutions:
@@ -104,6 +110,7 @@ Adjust the **Up time (s)** and **Down time (s)** numbers to match your curtain's
 - [ESPHome LibreTiny / bk72xx](https://esphome.io/components/libretiny.html)
 - [LoraTap SC411WSC on devices.esphome.io](https://devices.esphome.io/devices/LoraTap-SC411WSC)
 - [LoraTap SC500W on devices.esphome.io](https://devices.esphome.io/devices/LoraTap-SC500W)
+- [jojo99's SC500W-CB2S YAML](https://community.home-assistant.io/t/loratap-sc500w-v1-shutter-switch-with-esphome/616375)
 
 ## License
 
