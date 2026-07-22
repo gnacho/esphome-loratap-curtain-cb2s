@@ -1,5 +1,7 @@
 # LoraTap Curtain Relay — ESPHome (CB2S / BK7231N)
 
+![Producto LoraTap SC500W](docs/images/product-cover.png)
+
 [🇬🇧 Read the English version](README.md)
 
 Firmware de ESPHome para relés de persianas basados en el módulo **CB2S (Beken BK7231N)**, como los encontrados en dispositivos **LoraTap SC411WSC**, **LoraTap SC500W-CB2S** o similares.
@@ -88,6 +90,8 @@ ping curtain-relay-f044e3.local
 > **Aviso:** nunca cortocircuites P26 a GND. Quemarás el CB2S y posiblemente el adaptador USB-TTL.
 
 ## Soldadura y flasheo paso a paso
+
+![Montaje de soldadura con protoboard](docs/images/soldering-setup.jpg)
 
 ### 1. Identificar el pinout del CB2S
 

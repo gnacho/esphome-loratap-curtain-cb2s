@@ -1,5 +1,7 @@
 # LoraTap Curtain Relay — ESPHome (CB2S / BK7231N)
 
+![LoraTap SC500W product](docs/images/product-cover.png)
+
 [🇪🇸 Lee la versión en castellano](README.es.md)
 
 ESPHome firmware for curtain relay modules based on **CB2S (Beken BK7231N)**, such as those found in **LoraTap SC411WSC**, **LoraTap SC500W-CB2S** or similar devices.
@@ -88,6 +90,8 @@ ping curtain-relay-f044e3.local
 > **Warning:** never short P26 to GND. It will kill the CB2S and possibly your USB-TTL adapter.
 
 ## Soldering and flashing step-by-step
+
+![Soldering setup with breadboard](docs/images/soldering-setup.jpg)
 
 ### 1. Identify the CB2S pinout
 
