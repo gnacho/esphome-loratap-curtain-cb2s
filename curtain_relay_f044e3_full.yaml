@@ -1,5 +1,6 @@
-# Relé de persianas LoraTap CB2S (BK7231N) — Firmware base
-# Elige la configuración de botones físicos cambiando button_config.
+# Relé de persianas LoraTap CB2S (BK7231N) — combina scripts de jojo99
+# con exposición completa a HA/web (botones, invertir, reset, posición).
+# Usa scripts para evitar el problema de interlock del cover anterior.
 
 esphome:
   name: curtain-relay-f044e3
@@ -25,7 +26,6 @@ wifi:
   password: !secret wifi_password
   ap:
     ssid: "curtain-relay-f044e3"
-    # AP fallback sin contraseña para recuperación (regla del proyecto)
     password: ""
 
 substitutions:
@@ -35,10 +35,6 @@ substitutions:
   btn_down_pin: "P21"
   btn_stop_pin: "P7"
   safety_timeout: "60s"
-  # Elige uno de:
-  # buttons_disabled.yaml, buttons_1way.yaml, buttons_2way.yaml,
-  # buttons_3way.yaml, buttons_latching.yaml
-  button_config: "buttons_2way.yaml"
 
 globals:
   - id: g_current_pos
@@ -81,11 +77,9 @@ number:
 
 switch:
   - platform: gpio
-    name: "Relé subida"
     id: sw_up
+    name: "Relé subida"
     pin: ${up_pin}
-    interlock: [sw_down]
-    interlock_wait_time: 500ms
     restore_mode: always off
     internal: true
     on_turn_on:
@@ -94,11 +88,9 @@ switch:
       - script.stop: safety_timeout
 
   - platform: gpio
-    name: "Relé bajada"
     id: sw_down
+    name: "Relé bajada"
     pin: ${down_pin}
-    interlock: [sw_up]
-    interlock_wait_time: 500ms
     restore_mode: always off
     internal: true
     on_turn_on:
@@ -124,7 +116,78 @@ button:
     on_press:
       - lambda: 'id(move_to_position).execute(0.5f);'
 
+  - platform: template
+    name: "Subir"
+    id: btn_open
+    on_press:
+      - script.execute: open_script
+
+  - platform: template
+    name: "Bajar"
+    id: btn_close
+    on_press:
+      - script.execute: close_script
+
+  - platform: template
+    name: "Stop"
+    id: btn_stop
+    on_press:
+      - script.execute: stop_script
+
+binary_sensor:
+  - platform: gpio
+    id: btn_up
+    name: "Botón subir"
+    pin:
+      number: ${btn_up_pin}
+      mode: INPUT_PULLUP
+      inverted: true
+    on_press:
+      then:
+        - script.execute: open_script
+
+  - platform: gpio
+    id: btn_down
+    name: "Botón bajar"
+    pin:
+      number: ${btn_down_pin}
+      mode: INPUT_PULLUP
+      inverted: true
+    on_press:
+      then:
+        - script.execute: close_script
+
+  - platform: gpio
+    id: btn_stop_phys
+    name: "Botón stop"
+    pin:
+      number: ${btn_stop_pin}
+      mode: INPUT_PULLUP
+      inverted: true
+    on_press:
+      then:
+        - script.execute: stop_script
+
 script:
+  - id: open_script
+    mode: restart
+    then:
+      - switch.turn_off: sw_down
+      - delay: 500ms
+      - switch.turn_on: sw_up
+
+  - id: close_script
+    mode: restart
+    then:
+      - switch.turn_off: sw_up
+      - delay: 500ms
+      - switch.turn_on: sw_down
+
+  - id: stop_script
+    then:
+      - switch.turn_off: sw_up
+      - switch.turn_off: sw_down
+
   - id: move_to_position
     mode: restart
     parameters:
@@ -163,7 +226,6 @@ script:
           id(sw_down).turn_off();
           id(sw_up).turn_off();
           id(g_current_pos) = id(g_target_pos);
-          id(cover_main).publish_state(id(g_current_pos));
 
   - id: safety_timeout
     mode: restart
@@ -173,36 +235,3 @@ script:
       - lambda: |-
           id(sw_down).turn_off();
           id(sw_up).turn_off();
-
-cover:
-  - platform: template
-    name: "Persiana"
-    id: cover_main
-    device_class: shutter
-    optimistic: true
-    assumed_state: true
-    has_position: true
-    lambda: "return id(g_current_pos);"
-
-    open_action:
-      - script.execute:
-          id: move_to_position
-          target: 1.0
-
-    close_action:
-      - script.execute:
-          id: move_to_position
-          target: 0.0
-
-    stop_action:
-      - script.stop: move_to_position
-      - lambda: |-
-          id(sw_down).turn_off();
-          id(sw_up).turn_off();
-          id(cover_main).publish_state(id(g_current_pos));
-
-    position_action:
-      - lambda: 'id(move_to_position).execute(pos);'
-
-packages:
-  buttons: !include buttons_2way.yaml

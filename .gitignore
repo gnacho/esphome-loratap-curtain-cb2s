@@ -3,3 +3,12 @@ secrets.yaml
 *.uf2
 *.bin
 __pycache__/
+
+# Archivos de diagnóstico y pruebas RF (no subir)
+*_pinscan.yaml
+*_rf_diag.yaml
+*_rf_probe*.yaml
+*_test_reles.yaml
+rf_diag_package.yaml
+rf_probe_package.yaml
+rf_probe_raw_package.yaml
