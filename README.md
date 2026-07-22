@@ -87,6 +87,54 @@ ping curtain-relay-f044e3.local
 
 > **Warning:** never short P26 to GND. It will kill the CB2S and possibly your USB-TTL adapter.
 
+## Soldering and flashing step-by-step
+
+### 1. Identify the CB2S pinout
+
+Check the official LibreTiny CB2S documentation for the full pinout: [https://docs.libretiny.eu/boards/cb2s/#quick-flashing-guide](https://docs.libretiny.eu/boards/cb2s/#quick-flashing-guide)
+
+![CB2S pinout](docs/images/cb2s.svg)
+
+The CB2S only has pins on the bottom side, but on both edges.
+
+### 2. Prepare the hardware
+
+**If the relay has its own 230 V power supply** (recommended):
+
+- Connect only **GND, RX and TX** from the USB-TTL adapter to the CB2S.
+- Do **not** connect 3V3 from the adapter.
+
+**If the relay has no power supply:**
+
+- Connect **3V3, GND, RX and TX** from the adapter.
+- Make sure your adapter can supply enough current; otherwise the flash will fail.
+
+### 3. Backup the original firmware (strongly recommended)
+
+Before flashing anything, make a full backup of the stock firmware:
+
+```bash
+ltchiptool flash read bk7231n /tmp/relay_backup.bin -d /dev/ttyUSB0
+```
+
+Keep the backup safe. If you need to go back to stock, you can restore it.
+
+### 4. Flashing procedure
+
+1. **Power off the relay board** and disconnect it from mains if possible.
+2. **Connect the USB-TTL adapter** to your PC.
+3. Launch the flash command:
+
+```bash
+ltchiptool flash write -d /dev/ttyUSB0 \
+  curtain-relay-cb2s/.esphome/build/curtain-relay-f044e3/.pioenvs/curtain-relay-f044e3/firmware.uf2
+```
+
+4. **Power on the relay board** (connect to mains or 3.3 V depending on your setup).
+5. When the flashing tool shows the UART connection diagram, **bridge CEN to GND** briefly (about 1 second) to enter download mode, then release.
+
+> **Note:** on the original LoraTap PCB, the CB2S usually enters bootloader automatically without bridging CEN. On a bare CB2S module you will need to bridge CEN→GND.
+
 ## Customization
 
 Edit the `substitutions` in the YAML to change pins or timeouts:

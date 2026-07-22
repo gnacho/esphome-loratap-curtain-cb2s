@@ -87,6 +87,54 @@ ping curtain-relay-f044e3.local
 
 > **Aviso:** nunca cortocircuites P26 a GND. Quemarás el CB2S y posiblemente el adaptador USB-TTL.
 
+## Soldadura y flasheo paso a paso
+
+### 1. Identificar el pinout del CB2S
+
+Consulta la documentación oficial de LibreTiny para el pinout completo: [https://docs.libretiny.eu/boards/cb2s/#quick-flashing-guide](https://docs.libretiny.eu/boards/cb2s/#quick-flashing-guide)
+
+![Pinout CB2S](docs/images/cb2s.svg)
+
+El CB2S solo tiene pines en la parte inferior, pero en ambos lados.
+
+### 2. Preparar el hardware
+
+**Si el relé tiene fuente propia de 230 V** (recomendado):
+
+- Conecta solo **GND, RX y TX** del adaptador USB-TTL al CB2S.
+- **No conectes 3V3** del adaptador.
+
+**Si el relé no tiene fuente:**
+
+- Conecta **3V3, GND, RX y TX** del adaptador.
+- Asegúrate de que el adaptador puede dar suficiente corriente; si no, el flasheo fallará.
+
+### 3. Respaldo del firmware original (muy recomendado)
+
+Antes de flashear nada, haz un respaldo completo del firmware original:
+
+```bash
+ltchiptool flash read bk7231n /tmp/relay_backup.bin -d /dev/ttyUSB0
+```
+
+Guarda el respaldo en un lugar seguro. Si necesitas volver al firmware de fábrica, podrás restaurarlo.
+
+### 4. Proceso de flasheo
+
+1. **Apaga la placa del relé** y desconéctala de la red si es posible.
+2. **Conecta el adaptador USB-TTL** al PC.
+3. Lanza el comando de flasheo:
+
+```bash
+ltchiptool flash write -d /dev/ttyUSB0 \
+  curtain-relay-cb2s/.esphome/build/curtain-relay-f044e3/.pioenvs/curtain-relay-f044e3/firmware.uf2
+```
+
+4. **Enciende la placa del relé** (conecta a la red o a 3,3 V según tu montaje).
+5. Cuando la herramienta muestre el diagrama de conexión UART, **puentea CEN a GND** brevemente (1 segundo aproximadamente) para entrar en modo descarga, y suelta.
+
+> **Nota:** en la PCB original de LoraTap, el CB2S suele entrar en bootloader automáticamente sin puentear CEN. En un módulo CB2S suelto necesitarás puentear CEN→GND.
+
 ## Personalización
 
 Edita las `substitutions` del YAML para cambiar pines o tiempos:
